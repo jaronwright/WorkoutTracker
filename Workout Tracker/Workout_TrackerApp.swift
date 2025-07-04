@@ -14,7 +14,21 @@ struct Workout_TrackerApp: App {
     
     init() {
         do {
-            modelContainer = try ModelContainer(for: WorkoutSession.self)
+            let schema = Schema([
+                WorkoutSession.self
+            ])
+            
+            let modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true,
+                migrationOptions: .destructive // This will delete the old database and create a new one
+            )
+            
+            modelContainer = try ModelContainer(
+                for: schema,
+                configurations: [modelConfiguration]
+            )
         } catch {
             fatalError("Could not initialize ModelContainer: \(error)")
         }

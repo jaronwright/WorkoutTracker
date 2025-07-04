@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-class WorkoutSession {
+final class WorkoutSession {
     var id: UUID
     var name: String
     var sets: String
