@@ -10,27 +10,20 @@ import SwiftData
 
 @main
 struct Workout_TrackerApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            WorkoutSession.self,
-            WorkoutExercise.self,
-            Workout.self,
-            WorkoutTemplate.self,
-            TemplateExercise.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+    let modelContainer: ModelContainer
+    
+    init() {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            modelContainer = try ModelContainer(for: Workout.self)
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Could not initialize ModelContainer: \(error)")
         }
-    }()
-
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(modelContainer)
     }
 }

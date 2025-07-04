@@ -10,339 +10,267 @@ import SwiftData
 
 struct WorkoutSessionView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var workoutSessions: [WorkoutSession]
-    @State private var showingNewSession = false
-    @State private var showingTemplates = false
-    @State private var newSessionName = ""
+    @Query(sort: \Workout.createdAt, order: .reverse) private var workouts: [Workout]
+    @State private var selectedWorkout: Workout?
+    @State private var showingWorkoutDetail = false
     
     var body: some View {
         NavigationView {
-            VStack {
-                List {
-                    ForEach(workoutSessions) { session in
-                        NavigationLink(destination: SessionDetailView(session: session)) {
-                            WorkoutSessionRow(session: session)
-                        }
-                    }
-                    .onDelete(perform: deleteSession)
-                }
-                .listStyle(PlainListStyle())
+            ZStack {
+                // Background gradient
+                StarkColors.heroGradient
+                    .ignoresSafeArea()
                 
-                VStack(spacing: 12) {
-                    Button(action: {
-                        showingTemplates = true
-                    }) {
-                        HStack {
-                            Image(systemName: "doc.text.fill")
-                                .foregroundColor(.white)
-                            Text("Start from Template")
-                                .foregroundColor(.white)
-                                .fontWeight(.semibold)
+                ScrollView {
+                    LazyVStack(spacing: StarkSpacing.base) {
+                        // Header Stats
+                        HStack(spacing: StarkSpacing.large) {
+                            StatCard(
+                                title: "Total Workouts",
+                                value: "\(workouts.count)",
+                                icon: "figure.strengthtraining.traditional",
+                                color: StarkColors.starkBlue
+                            )
+                            
+                            StatCard(
+                                title: "This Week",
+                                value: "\(workoutsThisWeek)",
+                                icon: "calendar",
+                                color: StarkColors.powerOrange
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.green)
-                        .cornerRadius(10)
-                    }
-                    
-                    Button(action: {
-                        showingNewSession = true
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.white)
-                            Text("Start Custom Workout")
-                                .foregroundColor(.white)
-                                .fontWeight(.semibold)
+                        .padding(.horizontal, StarkSpacing.base)
+                        
+                        // Workout Sessions
+                        ForEach(workouts) { workout in
+                            WorkoutSessionCard(workout: workout)
+                                .padding(.horizontal, StarkSpacing.base)
+                                .onTapGesture {
+                                    selectedWorkout = workout
+                                    showingWorkoutDetail = true
+                                }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
                     }
+                    .padding(.vertical, StarkSpacing.large)
                 }
-                .padding()
             }
             .navigationTitle("Workout Sessions")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingNewSession) {
-                NewWorkoutSessionView(onSave: { sessionName in
-                    createNewSession(name: sessionName)
-                    showingNewSession = false
-                })
-            }
-            .sheet(isPresented: $showingTemplates) {
-                TemplateSelectionView { template in
-                    createSessionFromTemplate(template)
-                    showingTemplates = false
+            .sheet(isPresented: $showingWorkoutDetail) {
+                if let workout = selectedWorkout {
+                    WorkoutDetailView(workout: workout)
                 }
             }
         }
     }
     
-    private func createNewSession(name: String) {
-        let newSession = WorkoutSession(name: name)
-        modelContext.insert(newSession)
-    }
-    
-    private func createSessionFromTemplate(_ template: WorkoutTemplateInfo) {
-        let newSession = WorkoutSession(name: template.name)
+    private var workoutsThisWeek: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
         
-        for templateExercise in template.exercises {
-            let exercise = WorkoutExercise(
-                name: templateExercise.name,
-                sets: templateExercise.sets,
-                reps: templateExercise.reps,
-                weight: "",
-                notes: templateExercise.notes
-            )
-            exercise.session = newSession
-            newSession.exercises.append(exercise)
-            modelContext.insert(exercise)
-        }
-        
-        modelContext.insert(newSession)
-    }
-    
-    private func deleteSession(offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(workoutSessions[index])
-        }
+        return workouts.filter { workout in
+            workout.createdAt >= weekAgo
+        }.count
     }
 }
 
-struct WorkoutSessionRow: View {
-    let session: WorkoutSession
+struct StatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(session.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-                Text("\(session.exercises.count) exercises")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+        VStack(spacing: StarkSpacing.small) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
             
-            HStack {
-                Text(session.dateCreated, style: .date)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(session.isCompleted ? "Completed" : "In Progress")
-                    .font(.caption)
-                    .foregroundColor(session.isCompleted ? .green : .orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(session.isCompleted ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
-                    )
-            }
+            Text(value)
+                .font(StarkTypography.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+            
+            Text(title)
+                .font(StarkTypography.caption)
+                .foregroundColor(.secondary)
         }
-        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity)
+        .padding(StarkSpacing.base)
+        .glassCard()
     }
 }
 
-struct NewWorkoutSessionView: View {
-    @State private var sessionName = ""
-    let onSave: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
+struct WorkoutSessionCard: View {
+    let workout: Workout
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                TextField("Workout Session Name", text: $sessionName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
+        VStack(alignment: .leading, spacing: StarkSpacing.small) {
+            HStack {
+                VStack(alignment: .leading, spacing: StarkSpacing.tiny) {
+                    Text(workout.name)
+                        .font(StarkTypography.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Text(formatDate(workout.createdAt))
+                        .font(StarkTypography.caption)
+                        .foregroundColor(.secondary)
+                }
                 
                 Spacer()
-            }
-            .navigationTitle("New Workout Session")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                
+                // Status indicator
+                HStack(spacing: StarkSpacing.tiny) {
+                    Circle()
+                        .fill(workout.isCompleted ? StarkColors.successGreen : StarkColors.warningAmber)
+                        .frame(width: 8, height: 8)
+                    
+                    Text(workout.isCompleted ? "Completed" : "In Progress")
+                        .font(StarkTypography.mini)
+                        .foregroundColor(.secondary)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        onSave(sessionName)
-                    }
-                    .disabled(sessionName.isEmpty)
-                }
-            }
-        }
-    }
-}
-
-struct SessionDetailView: View {
-    @Environment(\.modelContext) private var modelContext
-    let session: WorkoutSession
-    @State private var showingAddExercise = false
-    @State private var newExerciseName = ""
-    @State private var newExerciseSets = ""
-    @State private var newExerciseReps = ""
-    @State private var newExerciseWeight = ""
-    @State private var newExerciseNotes = ""
-    
-    var body: some View {
-        VStack {
-            List {
-                ForEach(session.exercises) { exercise in
-                    WorkoutExerciseRow(exercise: exercise)
-                }
-                .onDelete(perform: deleteExercise)
-            }
-            .listStyle(PlainListStyle())
-            
-            Button(action: {
-                showingAddExercise = true
-            }) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.white)
-                    Text("Add Exercise")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.green)
-                .cornerRadius(10)
-            }
-            .padding()
-            
-            Button(action: {
-                session.isCompleted.toggle()
-            }) {
-                HStack {
-                    Image(systemName: session.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(.white)
-                    Text(session.isCompleted ? "Mark Incomplete" : "Complete Workout")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(session.isCompleted ? Color.orange : Color.blue)
-                .cornerRadius(10)
-            }
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .navigationTitle(session.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingAddExercise) {
-            AddExerciseView(onSave: { name, sets, reps, weight, notes in
-                addExercise(name: name, sets: sets, reps: reps, weight: weight, notes: notes)
-                showingAddExercise = false
-            })
-        }
-    }
-    
-    private func addExercise(name: String, sets: String, reps: String, weight: String, notes: String) {
-        let exercise = WorkoutExercise(name: name, sets: sets, reps: reps, weight: weight, notes: notes)
-        exercise.session = session
-        session.exercises.append(exercise)
-        modelContext.insert(exercise)
-    }
-    
-    private func deleteExercise(offsets: IndexSet) {
-        for index in offsets {
-            let exercise = session.exercises[index]
-            session.exercises.remove(at: index)
-            modelContext.delete(exercise)
-        }
-    }
-}
-
-struct WorkoutExerciseRow: View {
-    let exercise: WorkoutExercise
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(exercise.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-                Text("\(exercise.sets) sets × \(exercise.reps) reps")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
             }
             
-            if !exercise.weight.isEmpty {
-                Text("Weight: \(exercise.weight) lbs")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            HStack(spacing: StarkSpacing.medium) {
+                InfoPill(label: "Sets", value: workout.sets)
+                InfoPill(label: "Reps", value: workout.reps)
+                if !workout.weight.isEmpty {
+                    InfoPill(label: "Weight", value: "\(workout.weight) lbs")
+                }
             }
             
-            if !exercise.notes.isEmpty {
-                Text(exercise.notes)
-                    .font(.caption)
+            if !workout.notes.isEmpty {
+                Text(workout.notes)
+                    .font(StarkTypography.caption)
                     .foregroundColor(.secondary)
                     .italic()
+                    .padding(.top, StarkSpacing.tiny)
             }
         }
-        .padding(.vertical, 4)
+        .padding(StarkSpacing.base)
+        .glassCard()
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 
-struct AddExerciseView: View {
-    @State private var exerciseName = ""
-    @State private var exerciseSets = ""
-    @State private var exerciseReps = ""
-    @State private var exerciseWeight = ""
-    @State private var exerciseNotes = ""
+struct InfoPill: View {
+    let label: String
+    let value: String
     
-    let onSave: (String, String, String, String, String) -> Void
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(StarkTypography.mini)
+                .foregroundColor(.secondary)
+            
+            Text(value)
+                .font(StarkTypography.callout)
+                .fontWeight(.medium)
+                .foregroundColor(StarkColors.starkBlue)
+        }
+        .padding(.horizontal, StarkSpacing.small)
+        .padding(.vertical, StarkSpacing.tiny)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(StarkColors.starkBlue.opacity(0.1))
+        )
+    }
+}
+
+struct WorkoutDetailView: View {
+    let workout: Workout
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 12) {
-                TextField("Exercise Name", text: $exerciseName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            ZStack {
+                StarkColors.heroGradient
+                    .ignoresSafeArea()
                 
-                HStack {
-                    TextField("Sets", text: $exerciseSets)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                    
-                    TextField("Reps", text: $exerciseReps)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                    
-                    TextField("Weight (lbs)", text: $exerciseWeight)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.decimalPad)
+                ScrollView {
+                    VStack(spacing: StarkSpacing.large) {
+                        // Workout Details
+                        VStack(alignment: .leading, spacing: StarkSpacing.base) {
+                            Text("Workout Details")
+                                .font(StarkTypography.title2)
+                                .fontWeight(.semibold)
+                            
+                            DetailRow(label: "Exercise", value: workout.name)
+                            DetailRow(label: "Sets", value: workout.sets)
+                            DetailRow(label: "Reps", value: workout.reps)
+                            if !workout.weight.isEmpty {
+                                DetailRow(label: "Weight", value: "\(workout.weight) lbs")
+                            }
+                            DetailRow(label: "Created", value: formatDate(workout.createdAt))
+                            if let completedAt = workout.completedAt {
+                                DetailRow(label: "Completed", value: formatDate(completedAt))
+                            }
+                            
+                            if !workout.notes.isEmpty {
+                                VStack(alignment: .leading, spacing: StarkSpacing.tiny) {
+                                    Text("Notes")
+                                        .font(StarkTypography.callout)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Text(workout.notes)
+                                        .font(StarkTypography.body)
+                                        .foregroundColor(.primary)
+                                }
+                                .padding(.top, StarkSpacing.small)
+                            }
+                        }
+                        .padding(StarkSpacing.large)
+                        .glassCard()
+                        .padding(.horizontal, StarkSpacing.base)
+                    }
+                    .padding(.vertical, StarkSpacing.large)
                 }
-                
-                TextField("Notes (optional)", text: $exerciseNotes)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Spacer()
             }
-            .padding()
-            .navigationTitle("Add Exercise")
+            .navigationTitle("Workout Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        onSave(exerciseName, exerciseSets, exerciseReps, exerciseWeight, exerciseNotes)
-                    }
-                    .disabled(exerciseName.isEmpty)
-                }
             }
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
+struct DetailRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(StarkTypography.callout)
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text(value)
+                .font(StarkTypography.callout)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
         }
     }
 }
