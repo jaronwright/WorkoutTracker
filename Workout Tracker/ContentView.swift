@@ -29,7 +29,7 @@ struct ContentView: View {
 
 struct QuickWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var workouts: [Workout]
+    @Query private var workouts: [WorkoutSession]
     @State private var newWorkoutName = ""
     @State private var newWorkoutSets = ""
     @State private var newWorkoutReps = ""
@@ -153,7 +153,7 @@ struct QuickWorkoutView: View {
     }
     
     private func addWorkout() {
-        let workout = Workout(
+        let workout = WorkoutSession(
             name: newWorkoutName,
             sets: newWorkoutSets,
             reps: newWorkoutReps,
@@ -171,13 +171,13 @@ struct QuickWorkoutView: View {
         newWorkoutNotes = ""
     }
     
-    private func deleteWorkout(_ workout: Workout) {
+    private func deleteWorkout(_ workout: WorkoutSession) {
         modelContext.delete(workout)
     }
 }
 
 struct WorkoutRow: View {
-    let workout: Workout
+    let workout: WorkoutSession
     
     var body: some View {
         VStack(alignment: .leading, spacing: StarkSpacing.small) {

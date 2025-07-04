@@ -141,7 +141,7 @@ struct GlassInputFieldStyle: TextFieldStyle {
 
 // MARK: - Workout Card Component
 struct WorkoutCard: View {
-    let workout: Workout
+    let workout: WorkoutSession
     let progress: Double
     
     var body: some View {

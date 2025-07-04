@@ -14,7 +14,7 @@ struct Workout_TrackerApp: App {
     
     init() {
         do {
-            modelContainer = try ModelContainer(for: Workout.self)
+            modelContainer = try ModelContainer(for: WorkoutSession.self)
         } catch {
             fatalError("Could not initialize ModelContainer: \(error)")
         }

@@ -10,8 +10,8 @@ import SwiftData
 
 struct WorkoutSessionView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Workout.createdAt, order: .reverse) private var workouts: [Workout]
-    @State private var selectedWorkout: Workout?
+    @Query(sort: \WorkoutSession.createdAt, order: .reverse) private var workouts: [WorkoutSession]
+    @State private var selectedWorkout: WorkoutSession?
     @State private var showingWorkoutDetail = false
     
     var body: some View {
@@ -103,7 +103,7 @@ struct StatCard: View {
 }
 
 struct WorkoutSessionCard: View {
-    let workout: Workout
+    let workout: WorkoutSession
     
     var body: some View {
         VStack(alignment: .leading, spacing: StarkSpacing.small) {
@@ -186,7 +186,7 @@ struct InfoPill: View {
 }
 
 struct WorkoutDetailView: View {
-    let workout: Workout
+    let workout: WorkoutSession
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
