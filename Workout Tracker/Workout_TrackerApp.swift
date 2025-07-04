@@ -20,9 +20,7 @@ struct Workout_TrackerApp: App {
             
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                migrationOptions: .destructive // This will delete the old database and create a new one
+                isStoredInMemoryOnly: false
             )
             
             modelContainer = try ModelContainer(

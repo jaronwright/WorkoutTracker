@@ -274,13 +274,19 @@ struct SetRow: View {
     
     var body: some View {
         HStack(spacing: StarkSpacing.small) {
-            TextField("", value: $set.reps, format: .number)
-                .textFieldStyle(GlassInputFieldStyle())
-                .keyboardType(.numberPad)
+            TextField("", text: Binding(
+                get: { String(set.reps) },
+                set: { set.reps = Int($0) ?? 0 }
+            ))
+            .textFieldStyle(GlassInputFieldStyle())
+            .keyboardType(.numberPad)
             
-            TextField("", value: $set.weight, format: .number)
-                .textFieldStyle(GlassInputFieldStyle())
-                .keyboardType(.decimalPad)
+            TextField("", text: Binding(
+                get: { String(set.weight) },
+                set: { set.weight = Double($0) ?? 0 }
+            ))
+            .textFieldStyle(GlassInputFieldStyle())
+            .keyboardType(.decimalPad)
             
             Button(action: {
                 set.isCompleted.toggle()
