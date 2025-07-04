@@ -124,10 +124,10 @@ struct WorkoutSessionCard: View {
                 // Status indicator
                 HStack(spacing: StarkSpacing.tiny) {
                     Circle()
-                        .fill(workout.isCompleted ? StarkColors.successGreen : StarkColors.warningAmber)
+                        .fill(workout.isActuallyCompleted ? StarkColors.successGreen : StarkColors.warningAmber)
                         .frame(width: 8, height: 8)
                     
-                    Text(workout.isCompleted ? "Completed" : "In Progress")
+                    Text(workout.isActuallyCompleted ? "Completed" : "In Progress")
                         .font(StarkTypography.mini)
                         .foregroundColor(.secondary)
                 }
@@ -210,8 +210,8 @@ struct WorkoutDetailView: View {
                                 DetailRow(label: "Weight", value: "\(workout.weight) lbs")
                             }
                             DetailRow(label: "Created", value: formatDate(workout.createdAt))
-                            if let completedAt = workout.completedAt {
-                                DetailRow(label: "Completed", value: formatDate(completedAt))
+                            if workout.isActuallyCompleted {
+                                DetailRow(label: "Completed", value: formatDate(workout.completedAt))
                             }
                             
                             if !workout.notes.isEmpty {

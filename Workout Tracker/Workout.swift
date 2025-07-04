@@ -17,7 +17,7 @@ class WorkoutSession {
     var weight: String
     var notes: String
     var createdAt: Date
-    var completedAt: Date?
+    var completedAt: Date
     var isCompleted: Bool
     
     init(name: String, sets: String, reps: String, weight: String, notes: String) {
@@ -28,6 +28,12 @@ class WorkoutSession {
         self.weight = weight
         self.notes = notes
         self.createdAt = Date()
+        self.completedAt = Date.distantFuture // Use distant future to indicate not completed
         self.isCompleted = false
+    }
+    
+    // Computed property to check if workout is actually completed
+    var isActuallyCompleted: Bool {
+        return isCompleted && completedAt != Date.distantFuture
     }
 } 
