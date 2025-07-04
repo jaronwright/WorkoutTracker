@@ -15,6 +15,8 @@ struct Workout_TrackerApp: App {
             WorkoutSession.self,
             WorkoutExercise.self,
             Workout.self,
+            WorkoutTemplate.self,
+            TemplateExercise.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

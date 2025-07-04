@@ -65,3 +65,38 @@ final class Workout {
         self.dateCreated = Date()
     }
 }
+
+@Model
+final class WorkoutTemplate {
+    var id: UUID
+    var name: String
+    var category: String
+    var exercises: [TemplateExercise]
+    
+    init(name: String, category: String, exercises: [TemplateExercise] = []) {
+        self.id = UUID()
+        self.name = name
+        self.category = category
+        self.exercises = exercises
+    }
+}
+
+@Model
+final class TemplateExercise {
+    var id: UUID
+    var name: String
+    var sets: String
+    var reps: String
+    var notes: String
+    var isWarmup: Bool
+    var template: WorkoutTemplate?
+    
+    init(name: String, sets: String, reps: String, notes: String, isWarmup: Bool = false) {
+        self.id = UUID()
+        self.name = name
+        self.sets = sets
+        self.reps = reps
+        self.notes = notes
+        self.isWarmup = isWarmup
+    }
+}

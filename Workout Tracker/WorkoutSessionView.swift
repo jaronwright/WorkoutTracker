@@ -12,6 +12,7 @@ struct WorkoutSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var workoutSessions: [WorkoutSession]
     @State private var showingNewSession = false
+    @State private var showingTemplates = false
     @State private var newSessionName = ""
     
     var body: some View {
@@ -27,20 +28,38 @@ struct WorkoutSessionView: View {
                 }
                 .listStyle(PlainListStyle())
                 
-                Button(action: {
-                    showingNewSession = true
-                }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.white)
-                        Text("Start New Workout")
-                            .foregroundColor(.white)
-                            .fontWeight(.semibold)
+                VStack(spacing: 12) {
+                    Button(action: {
+                        showingTemplates = true
+                    }) {
+                        HStack {
+                            Image(systemName: "doc.text.fill")
+                                .foregroundColor(.white)
+                            Text("Start from Template")
+                                .foregroundColor(.white)
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .cornerRadius(10)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                    
+                    Button(action: {
+                        showingNewSession = true
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(.white)
+                            Text("Start Custom Workout")
+                                .foregroundColor(.white)
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                    }
                 }
                 .padding()
             }
@@ -52,11 +71,36 @@ struct WorkoutSessionView: View {
                     showingNewSession = false
                 })
             }
+            .sheet(isPresented: $showingTemplates) {
+                TemplateSelectionView { template in
+                    createSessionFromTemplate(template)
+                    showingTemplates = false
+                }
+            }
         }
     }
     
     private func createNewSession(name: String) {
         let newSession = WorkoutSession(name: name)
+        modelContext.insert(newSession)
+    }
+    
+    private func createSessionFromTemplate(_ template: WorkoutTemplateInfo) {
+        let newSession = WorkoutSession(name: template.name)
+        
+        for templateExercise in template.exercises {
+            let exercise = WorkoutExercise(
+                name: templateExercise.name,
+                sets: templateExercise.sets,
+                reps: templateExercise.reps,
+                weight: "",
+                notes: templateExercise.notes
+            )
+            exercise.session = newSession
+            newSession.exercises.append(exercise)
+            modelContext.insert(exercise)
+        }
+        
         modelContext.insert(newSession)
     }
     
