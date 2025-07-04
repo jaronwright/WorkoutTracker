@@ -9,6 +9,24 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    var body: some View {
+        TabView {
+            WorkoutSessionView()
+                .tabItem {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                    Text("Sessions")
+                }
+            
+            QuickWorkoutView()
+                .tabItem {
+                    Image(systemName: "plus.circle")
+                    Text("Quick Add")
+                }
+        }
+    }
+}
+
+struct QuickWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var workouts: [Workout]
     @State private var newWorkoutName = ""
@@ -75,7 +93,7 @@ struct ContentView: View {
                 }
                 .listStyle(PlainListStyle())
             }
-            .navigationTitle("Workout Tracker")
+            .navigationTitle("Quick Workout")
             .navigationBarTitleDisplayMode(.large)
         }
     }
