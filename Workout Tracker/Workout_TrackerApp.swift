@@ -20,7 +20,7 @@ struct Workout_TrackerApp: App {
             
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
-                isStoredInMemoryOnly: false
+                isStoredInMemoryOnly: true
             )
             
             modelContainer = try ModelContainer(
